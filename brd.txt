@@ -1,0 +1,222 @@
+Business Requirements Document (BRD)
+Timesheet Management System
+Prepared by: SANDILE TSHABALALA
+Date: June 25, 2025
+Due Date: 27 June 2025
+1. System Overview
+Purpose
+The Timesheet System is designed to enable employees to accurately log work hours, allocate time to tasks or projects, and submit these records for managerial approval. It aims to streamline time tracking, improve payroll accuracy, and ensure labor compliance.
+Key Stakeholders
+- Employees: Submit and manage their timesheets.
+- Managers: Review, approve, or reject timesheets.
+- HR Department: Monitor attendance, overtime, and leave.
+- Payroll Team: Use timesheet data for salary processing.
+- System Administrators: Manage system configuration and users.
+High-Level Goals and Outcomes
+• Provide an intuitive platform for logging and tracking work hours.
+• Automate approval workflows and notifications.
+• Ensure secure, compliant storage of time records.
+• Support data analysis through reports and dashboards.
+2. User Roles and Permissions
+User Type	Permissions
+Employee	Submit/edit/view own timesheets, view approval status, receive notifications.
+Manager	View/edit/approve/reject timesheets of team members, access team reports.
+HR Admin	View all timesheets, run reports, access leave info, manage holiday calendar.
+System Admin	Full system access: manage users, settings, integrations, logs, and audit trail.
+2.1 Use Case Scenarios – Diagram
+ 
+3. Functional Requirements
+Timesheet Entry
+Daily/Weekly/Monthly Logging; Project/Task Tracking; Breaks/Leave/Overtime
+Timesheet Approval
+Workflow; Notifications
+Editing and Resubmission
+Edit rejected or approved timesheets
+Leave Integration (Future Enhancement)
+Sync with leave management system; auto-adjust holidays
+Reporting and Analytics
+Individual/Team reports; PDF/Excel export; Dashboard summaries
+4. Non-Functional Requirements
+Performance
+Page load < 2s; 500+ users
+Availability
+99.9% uptime
+Security
+Encryption; access control
+Compliance
+Labour laws; company policies
+5. Integration Requirements (Future Enhancement)
+Integrations
+Payroll, HR, Leave systems
+6. UI/UX Requirements
+Design
+User-friendly; responsive; mobile-compatible
+Error Handling
+Clear messages; validation
+7. Notification System
+Channels
+Email and in-app
+Events
+Submission, approval, rejection, reminders
+Reminders
+Configurable
+Approval Section
+Name	Role	Signature	Date
+Manager	Team Lead		
+HR Representative	HR Manager		
+IT Manager	Systems Admin		
+
+8. Technical Architecture
+Frontend
+•	Framework: ReactJS
+•	Libraries: Axios (API calls), React Hook Form (form handling), Tailwind/Bootstrap (optional styling)
+•	Features: Responsive timesheet UI, dashboard charts, approval modals
+Backend
+•	Language: C#
+•	Framework: ASP.NET Core Web API
+•	Authentication: ASP.NET Identity with JWT for secure API access
+•	Database: SQL Server (or PostgreSQL)
+•	Services: TimesheetService, ApprovalService, NotificationService, ReportService
+API Endpoints (examples)
+•	POST /api/timesheets – Submit new timesheet
+•	GET /api/timesheets/{employeeId} – Fetch employee timesheets
+•	PUT /api/timesheets/{id}/approve – Approve timesheet
+•	GET /api/reports/team – Team timesheet reports
+Notifications
+•	Implementation: SignalR (real-time in-app updates), SMTP (email)
+•	Events: Submission, approval, rejection, overdue
+10. Audit Trail and Logs
+Tracking
+Logs for submit/edit/approve with timestamps and users
+Access
+HR and System Admin only
+9. DevOps & CI/CD
+•	Version Control: GitHub/GitLab
+•	CI/CD: GitHub Actions or Azure DevOps
+•	Deployment: Azure App Services or IIS for ASP.NET Core backend
+•	Monitoring: Application Insights / Log Analytics
+11. Testing & Validation Requirements
+Types
+Unit, System, Integration, UAT
+12. Deployment and Support
+Rollout Plan
+Pilot testing; full rollout
+Training
+Sessions; manuals; FAQs
+Support
+Bug tracking; SLA: Critical – 24h
+
+Business Requirements Document (BRD)
+Timesheet Management System
+Prepared by: SANDILE TSHABALALA
+Date: June 25, 2025
+Due Date: 27 June 2025
+1. System Overview
+Purpose
+The Timesheet System is designed to enable employees to accurately log work hours, allocate time to tasks or projects, and submit these records for managerial approval. It aims to streamline time tracking, improve payroll accuracy, and ensure labor compliance.
+Key Stakeholders
+- Employees: Submit and manage their timesheets.
+- Managers: Review, approve, or reject timesheets.
+- HR Department: Monitor attendance, overtime, and leave.
+- Payroll Team: Use timesheet data for salary processing.
+- System Administrators: Manage system configuration and users.
+High-Level Goals and Outcomes
+• Provide an intuitive platform for logging and tracking work hours.
+• Automate approval workflows and notifications.
+• Ensure secure, compliant storage of time records.
+• Support data analysis through reports and dashboards.
+2. User Roles and Permissions
+User Type	Permissions
+Employee	Submit/edit/view own timesheets, view approval status, receive notifications.
+Manager	View/edit/approve/reject timesheets of team members, access team reports.
+HR Admin	View all timesheets, run reports, access leave info, manage holiday calendar.
+System Admin	Full system access: manage users, settings, integrations, logs, and audit trail.
+2.1 Use Case Scenarios – Diagram
+ 
+3. Functional Requirements
+Timesheet Entry
+Daily/Weekly/Monthly Logging; Project/Task Tracking; Breaks/Leave/Overtime
+Timesheet Approval
+Workflow; Notifications
+Editing and Resubmission
+Edit rejected or approved timesheets
+Leave Integration (Future Enhancement)
+Sync with leave management system; auto-adjust holidays
+Reporting and Analytics
+Individual/Team reports; PDF/Excel export; Dashboard summaries
+4. Non-Functional Requirements
+Performance
+Page load < 2s; 500+ users
+Availability
+99.9% uptime
+Security
+Encryption; access control
+Compliance
+Labour laws; company policies
+5. Integration Requirements (Future Enhancement)
+Integrations
+Payroll, HR, Leave systems
+6. UI/UX Requirements
+Design
+User-friendly; responsive; mobile-compatible
+Error Handling
+Clear messages; validation
+7. Notification System
+Channels
+Email and in-app
+Events
+Submission, approval, rejection, reminders
+Reminders
+Configurable
+Approval Section
+Name	Role	Signature	Date
+Manager	Team Lead		
+HR Representative	HR Manager		
+IT Manager	Systems Admin		
+
+8. Technical Architecture
+Frontend
+•	Framework: ReactJS
+•	Libraries: Axios (API calls), React Hook Form (form handling), Tailwind/Bootstrap (optional styling)
+•	Features: Responsive timesheet UI, dashboard charts, approval modals
+Backend
+•	Language: C#
+•	Framework: ASP.NET Core Web API
+•	Authentication: ASP.NET Identity with JWT for secure API access
+•	Database: SQL Server (or PostgreSQL)
+•	Services: TimesheetService, ApprovalService, NotificationService, ReportService
+API Endpoints (examples)
+•	POST /api/timesheets – Submit new timesheet
+•	GET /api/timesheets/{employeeId} – Fetch employee timesheets
+•	PUT /api/timesheets/{id}/approve – Approve timesheet
+•	GET /api/reports/team – Team timesheet reports
+Notifications
+•	Implementation: SignalR (real-time in-app updates), SMTP (email)
+•	Events: Submission, approval, rejection, overdue
+10. Audit Trail and Logs
+Tracking
+Logs for submit/edit/approve with timestamps and users
+Access
+HR and System Admin only
+9. DevOps & CI/CD
+•	Version Control: GitHub/GitLab
+•	CI/CD: GitHub Actions or Azure DevOps
+•	Deployment: Azure App Services or IIS for ASP.NET Core backend
+•	Monitoring: Application Insights / Log Analytics
+11. Testing & Validation Requirements
+Types
+Unit, System, Integration, UAT
+12. Deployment and Support
+Rollout Plan
+Pilot testing; full rollout
+Training
+Sessions; manuals; FAQs
+Support
+Bug tracking; SLA: Critical – 24h
+
+on user roles which one to start with?
+ User Roles
+Employees (submit/edit timesheets)
+Managers (approve/reject timesheets)
+HR Admin (reports, leave management)
+System Admin (user management, configuration)

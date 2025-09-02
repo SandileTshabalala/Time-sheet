@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - AllowedOrigins=http://localhost:5173
+    ports:
+      - "5000:80"
+    env_file:
+      - ./Server/.env
+
+  frontend:
+    build:
+      context: ./client
+    env_file:
+      - ./client/.env
+    ports:
+      - "5173:80"
+    depends_on:
+      - api

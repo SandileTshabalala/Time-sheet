@@ -48,7 +48,15 @@ export default function SignalRListener() {
     const onEscalation = (p: any) => {
       if (!mounted) return;
       notifications.add({ type: 'TimesheetEscalation', title: 'Timesheet escalation', message: `#${p?.timesheetId} pending ${p?.daysPending} days`, payload: p });
-      toast.warn(`Escalation: Timesheet #${p?.timesheetId} pending ${p?.daysPending} days`);
+      // Make the toast clickable to navigate
+      toast.warn(`Escalation: Timesheet #${p?.timesheetId} pending ${p?.daysPending} days`, {
+        onClick: () => {
+          if (p?.timesheetId) {
+            window.location.href = `/manager/approvals?focus=${encodeURIComponent(p.timesheetId)}`;
+          }
+        },
+        closeOnClick: true,
+      });
     };
     const onManagerApproved = (p: any) => {
       if (!mounted) return;

@@ -2,26 +2,34 @@ import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/admin/Login';
-import AdminDashboard from './pages/admin/Dashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminAnalytics from './pages/admin/Analytics';
 import AdminUserForm from './components/admin/UserForm';
 import AdminRoute from './components/admin/AdminRoute';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import EmployeePage from './pages/employee/routes/Employee';
 import ManagerPage from './pages/manager/routes/Manager';
 import HRadmin from './pages/HRadmin/hradmin';
+import SystemSettings from './pages/admin/SystemSettings';
 import MainLayout from './components/layout/MainLayout';
 import ReportsPage from './pages/reports/routes/Reports';
 import Logout from './pages/Logout';
 import ReassignApprovals from './pages/admin/ReassignApprovals';
 import ChangePassword from './pages/ChangePassword';
 import SignalRListener from './components/common/SignalRListener';
+import EscalationPanel from './components/alerts/EscalationPanel';
+import EscalationDashboard from './components/alerts/EscalationDashboard';
+import UsersList from './components/admin/UsersList';
 import { NotificationsProvider } from './context/NotificationsContext';
+import IntegrationsPage from './pages/admin/Integrations';
  
 function App() {
   return (
     <NotificationsProvider>
       <ToastContainer position="top-right" newestOnTop closeOnClick pauseOnHover theme="colored" />
       <SignalRListener />
+      <EscalationPanel />
+      {/* <UserDebug /> */}
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -39,7 +47,19 @@ function App() {
           path="/admin"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <MainLayout>
+                <AdminDashboard />
+              </MainLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <AdminRoute>
+              <MainLayout>
+                <AdminAnalytics />
+              </MainLayout>
             </AdminRoute>
           }
         />
@@ -47,15 +67,69 @@ function App() {
           path="/admin/reassign-approvals"
           element={
             <AdminRoute>
-              <ReassignApprovals />
+              <MainLayout>
+                <ReassignApprovals />
+              </MainLayout>
             </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/integrations"
+          element={
+            <AdminRoute>
+              <MainLayout>
+                <IntegrationsPage />
+              </MainLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/system-settings"
+          element={
+            <AdminRoute>
+              <MainLayout>
+                <SystemSettings />
+              </MainLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <MainLayout>
+                <UsersList />
+              </MainLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/alerts"
+          element={
+            <AdminRoute>
+              <MainLayout>
+                <EscalationDashboard />
+              </MainLayout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/hradmin/alerts"
+          element={
+            <ProtectedRoute roles={["HRAdmin","SystemAdmin"]}>
+              <MainLayout>
+                <EscalationDashboard />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/users/new"
           element={
             <AdminRoute>
-              <AdminUserForm />
+              <MainLayout>
+                <AdminUserForm />
+              </MainLayout>
             </AdminRoute>
           }
         />
@@ -63,7 +137,9 @@ function App() {
           path="/admin/users/:id/edit"
           element={
             <AdminRoute>
-              <AdminUserForm isEdit />
+              <MainLayout>
+                <AdminUserForm isEdit />
+              </MainLayout>
             </AdminRoute>
           }
         />

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Server.DataBase;
 using Server.Models.Entities;
+using Server.Models.DTOs;
 using System.Security.Claims;
 
 namespace Server.Controllers
@@ -51,6 +52,38 @@ namespace Server.Controllers
             await _context.SaveChangesAsync();
         }
 
+        private static LeaveDto ToDto(LeaveRequest l)
+        {
+            // Map server statuses to client numeric model: Pending->1(Submitted), Approved->3, Rejected->4
+            int clientStatus = l.Status switch
+            {
+                LeaveStatus.Pending => 1,
+                LeaveStatus.Approved => 3,
+                LeaveStatus.Rejected => 4,
+                _ => 1
+            };
+
+            var employeeName = l.Employee != null ? $"{l.Employee.FirstName} {l.Employee.LastName}".Trim() : string.Empty;
+            var approverName = l.Approver != null ? $"{l.Approver.FirstName} {l.Approver.LastName}".Trim() : null;
+
+            return new LeaveDto
+            {
+                Id = l.Id,
+                EmployeeId = l.EmployeeId,
+                EmployeeName = employeeName,
+                ApprovedById = l.ApproverId,
+                ApprovedByName = approverName,
+                Type = l.Type.ToString(),
+                StartDate = l.StartDate,
+                EndDate = l.EndDate,
+                Days = (int)(l.EndDate.Date - l.StartDate.Date).TotalDays + 1,
+                Reason = l.Reason,
+                Status = clientStatus,
+                CreatedDate = l.CreatedAt,
+                ApprovedDate = l.Status == LeaveStatus.Approved ? l.ModifiedAt : null
+            };
+        }
+
         // POST: api/leaves
         [HttpPost]
         [Authorize(Roles = "Employee,SystemAdmin,Manager,HRAdmin")]
@@ -84,7 +117,13 @@ namespace Server.Controllers
             await _context.SaveChangesAsync();
 
             await AddAuditAsync(userId, "LeaveCreated", $"Leave {leave.Id} {leave.Type} {leave.StartDate:yyyy-MM-dd} to {leave.EndDate:yyyy-MM-dd}");
-            return CreatedAtAction(nameof(GetMy), new { id = leave.Id }, null);
+            // Reload with relations for names
+            var saved = await _context.LeaveRequests
+                .Include(x => x.Employee)
+                .Include(x => x.Approver)
+                .FirstAsync(x => x.Id == leave.Id);
+            var dto = ToDto(saved);
+            return CreatedAtAction(nameof(GetMy), new { id = leave.Id }, dto);
         }
 
         // GET: api/leaves/my
@@ -95,10 +134,13 @@ namespace Server.Controllers
             var userId = CurrentUserId;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
             var items = await _context.LeaveRequests
+                .Include(l => l.Employee)
+                .Include(l => l.Approver)
                 .Where(l => l.EmployeeId == userId)
                 .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
-            return Ok(items);
+            var dtos = items.Select(ToDto).ToList();
+            return Ok(dtos);
         }
 
         // GET: api/leaves/pending
@@ -107,10 +149,13 @@ namespace Server.Controllers
         public async Task<IActionResult> GetPending()
         {
             var items = await _context.LeaveRequests
+                .Include(l => l.Employee)
+                .Include(l => l.Approver)
                 .Where(l => l.Status == LeaveStatus.Pending)
                 .OrderBy(l => l.StartDate)
                 .ToListAsync();
-            return Ok(items);
+            var dtos = items.Select(ToDto).ToList();
+            return Ok(dtos);
         }
 
         // PUT: api/leaves/{id}

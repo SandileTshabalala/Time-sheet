@@ -255,7 +255,7 @@ const TimesheetList: React.FC = () => {
               <div>
                 <span className="font-medium text-gray-700">Pending: </span>
                 <span className="text-blue-600">
-                  {timesheets.filter(t => t.status === TimesheetStatus.Submitted).length}
+                  {timesheets.filter(t => t.status === TimesheetStatus.Submitted || t.status === TimesheetStatus.ManagerApproved).length}
                 </span>
               </div>
             </div>

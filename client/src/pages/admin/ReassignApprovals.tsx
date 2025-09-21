@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import adminService, { type UserDto } from '../../services/admin.service';
 import { toast } from 'react-toastify';
-import NavBar from '@/components/layout/NavBar';
 
 interface PendingItem {
   id: number;
@@ -26,7 +25,6 @@ const ReassignApprovals: React.FC = () => {
     (async () => {
       try {
         const approvers = await adminService.getEligibleApprovers();
-        // Prefer Managers for FROM dropdown, but allow HR admins too
         setManagers(approvers);
       } catch (e: any) {
         toast.error(e?.response?.data || 'Failed to load approvers');
@@ -97,10 +95,7 @@ const ReassignApprovals: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col gap-4">
-        <NavBar />
         <h1 className="text-xl font-semibold">Reassign Pending Approvals</h1>
-
-        {/* Controls */}
         <div className="bg-white rounded-lg shadow p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-gray-600 mb-1">From (leaving/locked) Manager/HR</label>

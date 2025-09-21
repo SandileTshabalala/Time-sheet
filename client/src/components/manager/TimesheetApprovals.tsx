@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import timesheetService, { type TimesheetDto, type ApproveTimesheetDto } from '../../services/timesheet.service';
 
 const TimesheetApprovals: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const focusParam = searchParams.get('focus');
+  const focusId = focusParam ? Number(focusParam) : undefined;
   const [timesheets, setTimesheets] = useState<TimesheetDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimesheet, setSelectedTimesheet] = useState<TimesheetDto | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [readOnlyDetail, setReadOnlyDetail] = useState(false);
   const [approvalData, setApprovalData] = useState<ApproveTimesheetDto>({
     isApproved: true,
     rejectionReason: ''
@@ -15,6 +20,26 @@ const TimesheetApprovals: React.FC = () => {
   useEffect(() => {
     loadPendingApprovals();
   }, []);
+
+  // After timesheets load, if focusId present, scroll and briefly highlight
+  useEffect(() => {
+    if (!loading && timesheets.length && focusId) {
+      const el = document.getElementById(`ts-row-${focusId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-gray-900');
+        const t = setTimeout(() => el.classList.remove('ring-2', 'ring-gray-900'), 2000);
+        return () => clearTimeout(t);
+      }
+      // Open read-only detail modal for the focused item if present in the list
+      const ts = timesheets.find(t => t.id === focusId);
+      if (ts) {
+        setSelectedTimesheet(ts);
+        setReadOnlyDetail(true);
+        setShowApprovalModal(true);
+      }
+    }
+  }, [loading, timesheets, focusId]);
 
   const loadPendingApprovals = async () => {
     try {
@@ -113,13 +138,20 @@ const TimesheetApprovals: React.FC = () => {
                     Submitted
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {timesheets.map((timesheet) => (
-                  <tr key={timesheet.id} className="hover:bg-gray-50">
+                  <tr
+                    key={timesheet.id}
+                    id={`ts-row-${timesheet.id}`}
+                    className={`hover:bg-gray-50 ${focusId === timesheet.id ? 'bg-gray-50' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {timesheet.employeeName}
@@ -139,6 +171,11 @@ const TimesheetApprovals: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(timesheet.createdDate)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${timesheetService.getStatusColor(timesheet.status)}`}>
+                        {timesheetService.getStatusText(timesheet.status)}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
@@ -187,7 +224,42 @@ const TimesheetApprovals: React.FC = () => {
       </div>
 
       {/* Approval Modal */}
-      {showApprovalModal && selectedTimesheet && (
+      {showApprovalModal && selectedTimesheet && readOnlyDetail && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-[28rem] shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Timesheet Details</h3>
+              <div className="mb-4 p-4 bg-gray-50 rounded-md">
+                <p><strong>Employee:</strong> {selectedTimesheet.employeeName}</p>
+                <p><strong>Date:</strong> {formatDate(selectedTimesheet.date)}</p>
+                <p><strong>Hours:</strong> {selectedTimesheet.hoursWorked}h</p>
+                <p><strong>Overtime:</strong> {selectedTimesheet.overtimeHours || 0}h</p>
+                {selectedTimesheet.projectName && (
+                  <p><strong>Project:</strong> {selectedTimesheet.projectName}</p>
+                )}
+                {selectedTimesheet.taskDescription && (
+                  <p><strong>Task:</strong> {selectedTimesheet.taskDescription}</p>
+                )}
+                {selectedTimesheet.comments && (
+                  <p><strong>Comments:</strong> {selectedTimesheet.comments}</p>
+                )}
+                <p className="mt-2"><strong>Submitted:</strong> {formatDateTime(selectedTimesheet.createdDate)}</p>
+                <p><strong>Status:</strong> {timesheetService.getStatusText(selectedTimesheet.status)}</p>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => { setShowApprovalModal(false); setSelectedTimesheet(null); setReadOnlyDetail(false); }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApprovalModal && selectedTimesheet && !readOnlyDetail && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
@@ -233,6 +305,7 @@ const TimesheetApprovals: React.FC = () => {
                   onClick={() => {
                     setShowApprovalModal(false);
                     setSelectedTimesheet(null);
+                    setReadOnlyDetail(false);
                   }}
                   className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >

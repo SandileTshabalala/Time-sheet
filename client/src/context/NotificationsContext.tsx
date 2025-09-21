@@ -24,6 +24,7 @@ export type NotificationsContextType = {
   add: (n: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => void;
   markAllRead: () => void;
   clear: () => void;
+  markAsRead: (id: string) => void;
 };
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
@@ -40,6 +41,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   const markAllRead = () => setItems((prev) => prev.map((i) => ({ ...i, read: true })));
   const clear = () => setItems([]);
+  const markAsRead = (id: string) => setItems((prev) => prev.map((i) => i.id === id ? { ...i, read: true } : i));
 
   const value = useMemo<NotificationsContextType>(() => ({
     items,
@@ -47,6 +49,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     add,
     markAllRead,
     clear,
+    markAsRead,
   }), [items]);
 
   return (

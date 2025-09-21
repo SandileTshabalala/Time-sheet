@@ -33,7 +33,7 @@ const EmployeeDashboard: React.FC = () => {
   const getStatusCounts = () => {
     return {
       draft: timesheets.filter(t => t.status === TimesheetStatus.Draft).length,
-      submitted: timesheets.filter(t => t.status === TimesheetStatus.Submitted).length,
+      submitted: timesheets.filter(t => t.status === TimesheetStatus.Submitted || t.status === TimesheetStatus.ManagerApproved).length,
       approved: timesheets.filter(t => t.status === TimesheetStatus.Approved).length,
       rejected: timesheets.filter(t => t.status === TimesheetStatus.Rejected).length,
     };

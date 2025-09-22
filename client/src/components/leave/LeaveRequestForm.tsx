@@ -10,7 +10,6 @@ const LeaveRequestForm: React.FC = () => {
   const submit = async () => {
     try {
       setSubmitting(true)
-      // basic client-side validation
       const s = new Date(form.startDate as any)
       const e = new Date(form.endDate as any)
       if (isNaN(s.getTime()) || isNaN(e.getTime())) {

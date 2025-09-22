@@ -18,7 +18,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate();
 
-  // Safeguard 1: On reaching /login, clear any stale user that has mustChangePassword=true
   useEffect(() => {
     const stored = authService.getCurrentUser() as any;
     if (stored?.mustChangePassword) {
@@ -29,7 +28,6 @@ const Login = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev: LoginData) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -39,18 +37,14 @@ const Login = () => {
     setLoading(true);
   
     try {
-      // Safeguard 2: If switching accounts (email changed), clear any existing session first
       const existing = authService.getCurrentUser();
       if (existing && existing.email && existing.email.toLowerCase() !== formData.email.toLowerCase()) {
         authService.logout();
       }
 
       const response = await authService.login(formData);
-      // authService.login already persisted token, refresh token, and user
       const user = authService.getCurrentUser();
       const roles = user?.roles || response.user?.roles || [];
-
-      // If backend requires password change, force redirect to change-password page
       const mustChange = user?.mustChangePassword ?? response.mustChangePassword ?? response.user?.mustChangePassword;
       if (mustChange) {
         navigate('/change-password');
@@ -76,7 +70,8 @@ const Login = () => {
   };
 
   return (
-    <Card className="shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <Card className="w-full max-w-md shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
       <CardHeader className="space-y-4 text-center pb-8">
         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
           <Lock className="w-8 h-8 text-primary" />
@@ -163,6 +158,7 @@ const Login = () => {
         </div>
       </CardContent>
     </Card>
+  </div>
   );
 };
 

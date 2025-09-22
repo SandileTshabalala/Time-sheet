@@ -299,18 +299,16 @@ class TimesheetService {
       return [];
     }
   }
-
+ 
   async getAnalyticsData(filters: ReportFilters): Promise<TimesheetDto[]> {
     try {
       console.log('getAnalyticsData called with filters:', filters);
       const teamTimesheets = await this.getTeamTimesheets(filters);
       console.log('getAnalyticsData - teamTimesheets count:', teamTimesheets.length);
       
-      // Try to get comprehensive data using admin service if available
-      // This provides complete historical data including approved/rejected timesheets
       if (teamTimesheets.length < 10) {
         try {
-          // Import admin service dynamically to avoid circular dependencies
+          //admin service dynamically to avoid circular dependencies
           const { default: adminService } = await import('./admin.service');
           const usersResponse = await adminService.getUsers();
           const users = Array.isArray(usersResponse.data) ? usersResponse.data : usersResponse.data?.items || [];

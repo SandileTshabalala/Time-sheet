@@ -10,8 +10,8 @@ import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import reportsService from '@/services/reports.service';
 import timesheetService from '@/services/timesheet.service';
-import authService from '@/services/auth.service';
-
+// import authService from '@/services/auth.service';
+ 
 interface HRMetrics {
   totalEmployees: number;
   activeEmployees: number;
@@ -36,13 +36,13 @@ interface EmployeePerformance {
 }
 
 const HRAnalytics: React.FC = () => {
-  const user = authService.getCurrentUser();
+  // const user = authService.getCurrentUser();
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],  //number of milliseconds in 30 days ago
     endDate: new Date().toISOString().split('T')[0]
   });
-
+ 
   // Fetch HR analytics data
   const { data: hrData, isLoading, error, refetch } = useQuery({
     queryKey: ['hr-analytics', dateRange],

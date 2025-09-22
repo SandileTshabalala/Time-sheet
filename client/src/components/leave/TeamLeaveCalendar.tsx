@@ -1,10 +1,8 @@
-"use client"
-
 import type React from "react"
 import { useEffect, useState } from "react"
 import leaveService, { type LeaveRequestDto } from "../../services/leave.service"
 
-// Simple grouped list by month to simulate a calendar view
+
 const TeamLeaveCalendar: React.FC = () => {
   const [items, setItems] = useState<LeaveRequestDto[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,7 +15,6 @@ const TeamLeaveCalendar: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true)
-      // Reuse pending as a placeholder for team leaves; backend endpoint to be added later
       const data = await leaveService.pendingApprovals()
       setItems(data)
     } catch (e: any) {

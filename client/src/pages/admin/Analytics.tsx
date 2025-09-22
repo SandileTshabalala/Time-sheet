@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import reportsService from '@/services/reports.service';
 import adminService from '@/services/admin.service';
 import timesheetService from '@/services/timesheet.service';
-import authService from '@/services/auth.service';
+// import authService from '@/services/auth.service';
 
 interface SystemMetrics {
   totalUsers: number;
@@ -33,7 +33,7 @@ interface UserActivity {
 }
 
 const AdminAnalytics: React.FC = () => {
-  const user = authService.getCurrentUser();
+  // const user = authService.getCurrentUser();
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

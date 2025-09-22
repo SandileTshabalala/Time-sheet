@@ -64,7 +64,6 @@ const AdminDashboard: React.FC = () => {
           return daysPending > 14;
         }).length;
 
-        // Mock new users this month (in real app, would come from user creation dates)
         const newUsersThisMonth = users.filter((u: any) => {
           const createdDate = new Date(u.createdDate || Date.now());
           const thisMonth = new Date();

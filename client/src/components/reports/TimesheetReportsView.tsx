@@ -33,7 +33,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
   Line,
   PieChart as RechartsPieChart,
   Pie,
@@ -74,7 +73,7 @@ interface TimesheetAnalytics {
     averageHours: number;
   }>;
   departmentStats: Array<{
-    department: string;
+    team: string;
     totalHours: number;
     employeeCount: number;
     averageHours: number;
@@ -101,6 +100,30 @@ const TimesheetReportsView: React.FC = () => {
     status: ''
   });
 
+  // Fetch raw timesheet data for detailed view
+  const { data: rawTimesheets, isLoading: rawTimesheetsLoading } = useQuery({
+    queryKey: ['raw-timesheets', filters],
+    queryFn: async () => {
+      const timesheets = isAdmin 
+        ? await TimesheetService.getAnalyticsData(filters)
+        : await TimesheetService.getMyTimesheets(filters.startDate, filters.endDate);
+      
+      // Apply filters and sort
+      let filtered = timesheets.filter((ts: any) => {
+        const tsDate = new Date(ts.date);
+        const startDate = new Date(filters.startDate);
+        const endDate = new Date(filters.endDate);
+        
+        return tsDate >= startDate && tsDate <= endDate &&
+               (!filters.employeeId || ts.employeeId === filters.employeeId) &&
+               (!filters.status || ts.status.toString() === filters.status);
+      });
+      
+      // Sort by date descending (most recent first)
+      return filtered.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -116,8 +139,31 @@ const TimesheetReportsView: React.FC = () => {
     }
   };
 
-  // ... existing code ...
+  const getStatusText = (status: number) => {
+    switch (status) {
+      case 0: return 'Draft';
+      case 1: return 'Submitted';
+      case 2: return 'Approved';
+      case 3: return 'Rejected';
+      case 4: return 'Resubmitted';
+      case 5: return 'Manager Approved';
+      default: return 'Unknown';
+    }
+  };
 
+  const getStatusBadgeColor = (status: number) => {
+    switch (status) {
+      case 0: return 'bg-gray-100 text-gray-800';
+      case 1: return 'bg-blue-100 text-blue-800';
+      case 2: return 'bg-green-100 text-green-800';
+      case 3: return 'bg-red-100 text-red-800';
+      case 4: return 'bg-yellow-100 text-yellow-800';
+      case 5: return 'bg-indigo-100 text-indigo-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  
   // Fetch comprehensive timesheet analytics
   const { data: analytics, isLoading: analyticsLoading2, refetch: refetchAnalytics } = useQuery<TimesheetAnalytics>({
     queryKey: ['timesheet-analytics', filters],
@@ -157,9 +203,9 @@ const TimesheetReportsView: React.FC = () => {
 
       // Calculate basic metrics
       const totalSubmissions = filteredTimesheets.length;
-      const approvedCount = filteredTimesheets.filter((ts: any) => ts.status === 2 || ts.status === 5).length; // Approved + ManagerApproved
+      const approvedCount = filteredTimesheets.filter((ts: any) => ts.status === 2 || ts.status === 5).length; 
       const rejectedCount = filteredTimesheets.filter((ts: any) => ts.status === 3).length;
-      const pendingCount = filteredTimesheets.filter((ts: any) => ts.status === 1 || ts.status === 4).length; // Submitted + Resubmitted
+      const pendingCount = filteredTimesheets.filter((ts: any) => ts.status === 1 || ts.status === 4).length; 
       const draftCount = filteredTimesheets.filter((ts: any) => ts.status === 0).length;
       const totalHours = filteredTimesheets.reduce((sum: number, ts: any) => sum + ts.hoursWorked, 0);
 
@@ -227,36 +273,37 @@ const TimesheetReportsView: React.FC = () => {
           averageHours: data.submissions > 0 ? data.totalHours / data.submissions : 0
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
+        
 
-      // Calculate department statistics based on user roles (since department field doesn't exist)
-      const departmentMap = new Map<string, { totalHours: number; employeeCount: number; employees: Set<string> }>();
+      // Calculate team statistics based on user roles (since team field doesn't exist)
+      const teamMap = new Map<string, { totalHours: number; employeeCount: number; employees: Set<string> }>();
       
       filteredTimesheets.forEach((ts: any) => {
         const user = users.find((u: any) => u.id === ts.employeeId);
-        // Use primary role as department since department field doesn't exist
-        const department = user?.roles?.[0] || (ts.department || 'General');
+        // Use role as team
+        const team = user?.roles?.[0] || (ts.team || 'General');
         
-        if (!departmentMap.has(department)) {
-          departmentMap.set(department, {
+        if (!teamMap.has(team)) {
+          teamMap.set(team, {
             totalHours: 0,
             employeeCount: 0,
             employees: new Set()
           });
         }
         
-        const deptData = departmentMap.get(department)!;
-        deptData.totalHours += ts.hoursWorked;
-        deptData.employees.add(ts.employeeId);
+        const teamData = teamMap.get(team)!;
+        teamData.totalHours += ts.hoursWorked;
+        teamData.employees.add(ts.employeeId);
       });
 
-      const departmentStats = Array.from(departmentMap.entries())
-        .map(([department, data]) => ({
-          department,
+      const teamStats = Array.from(teamMap.entries())
+        .map(([team, data]) => ({
+          team,
           totalHours: data.totalHours,
           employeeCount: data.employees.size,
           averageHours: data.employees.size > 0 ? data.totalHours / data.employees.size : 0
         }))
-        .filter(dept => dept.totalHours > 0)
+        .filter(team => team.totalHours > 0)
         .sort((a, b) => b.totalHours - a.totalHours);
 
       return {
@@ -269,7 +316,7 @@ const TimesheetReportsView: React.FC = () => {
         averageHoursPerSubmission: totalSubmissions > 0 ? totalHours / totalSubmissions : 0,
         topPerformers,
         dailyStats,
-        departmentStats
+        departmentStats: teamStats
       };
       } catch (error) {
         console.error('Failed to fetch analytics data:', error);
@@ -291,8 +338,6 @@ const TimesheetReportsView: React.FC = () => {
       }
     }
   });
-
-  // Helper for performance metrics calculation
 
   const handleExportAnalytics = async (format: 'excel' | 'pdf') => {
     try {
@@ -350,7 +395,7 @@ const TimesheetReportsView: React.FC = () => {
         <TabsList>
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="details">Detailed View</TabsTrigger>
-          {isAdmin && <TabsTrigger value="department">Department Stats</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="teams">Team Stats</TabsTrigger>}
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
@@ -456,37 +501,148 @@ const TimesheetReportsView: React.FC = () => {
               <CardDescription>Filter and analyze individual timesheet entries</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Timesheet data table would go here */}
-              <div className="h-[300px] flex items-center justify-center border rounded-md bg-muted/50">
-                <p className="text-muted-foreground">Timesheet data table will be displayed here</p>
-              </div>
+              {rawTimesheetsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : rawTimesheets && rawTimesheets.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-700">{rawTimesheets.length}</div>
+                      <div className="text-sm text-blue-600">Total Records</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-green-700">
+                        {rawTimesheets.reduce((sum: number, ts: any) => sum + ts.hoursWorked, 0).toFixed(1)}h
+                      </div>
+                      <div className="text-sm text-green-600">Total Hours</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-700">
+                        {Array.from(new Set(rawTimesheets.map((ts: any) => ts.employeeId))).length}
+                      </div>
+                      <div className="text-sm text-purple-600">Unique Employees</div>
+                    </div>
+                  </div>
+
+                  {/* Data table */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Date</th>
+                            {isAdmin && <th className="px-4 py-3 text-left font-medium text-gray-900">Employee</th>}
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Hours</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Project</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Task</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Status</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-900">Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {rawTimesheets.slice(0, 50).map((timesheet: any, index: number) => (
+                            <tr key={timesheet.id || index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {new Date(timesheet.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </td>
+                              {isAdmin && (
+                                <td className="px-4 py-3 text-gray-900">
+                                  <div>
+                                    <div className="font-medium">{timesheet.employeeName || 'Unknown'}</div>
+                                    {/* timesheet id */}
+                                    {/* <div className="text-xs text-gray-500">{timesheet.employeeId}</div> */}
+                                  </div>
+                                </td>
+                              )}
+                              <td className="px-4 py-3">
+                                <div className="font-semibold text-gray-900">{timesheet.hoursWorked}h</div>
+                                {timesheet.overtimeHours > 0 && (
+                                  <div className="text-xs text-orange-600">+{timesheet.overtimeHours}h OT</div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-gray-700">
+                                {timesheet.projectName || '-'}
+                              </td>
+                              <td className="px-4 py-3 text-gray-700 max-w-[200px]">
+                                <div className="truncate" title={timesheet.taskDescription || '-'}>
+                                  {timesheet.taskDescription || '-'}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge className={getStatusBadgeColor(timesheet.status)}>
+                                  {getStatusText(timesheet.status)}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 max-w-[200px]">
+                                <div className="truncate" title={timesheet.comments || '-'}>
+                                  {timesheet.comments || '-'}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {rawTimesheets.length > 50 && (
+                      <div className="bg-gray-50 px-4 py-3 border-t text-center text-sm text-gray-600">
+                        Showing first 50 of {rawTimesheets.length} records
+                        <Button variant="outline" size="sm" className="ml-2">
+                          Load More
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-gray-500">
+                    * Data filtered by selected date range ({filters.startDate} to {filters.endDate})
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center border rounded-md bg-muted/50">
+                  <div className="text-center">
+                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">No timesheet data found</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Try adjusting your date range or submit some timesheets to see data here.
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
         
         {isAdmin && (
-          <TabsContent value="department">
+          <TabsContent value="teams">
             <Card>
               <CardHeader>
-                <CardTitle>Department Statistics</CardTitle>
-                <CardDescription>Performance metrics by department</CardDescription>
+                <CardTitle>Team Statistics</CardTitle>
+                <CardDescription>Performance metrics by team</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {analytics?.departmentStats?.map((dept: any) => (
-                    <div key={dept.department} className="border rounded-md p-4">
+                  {analytics?.departmentStats?.map((team: any) => (
+                    <div key={team.team} className="border rounded-md p-4">
                       <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium">{dept.department}</h3>
-                        <Badge variant="outline">{dept.employeeCount} employees</Badge>
+                        <h3 className="font-medium">{team.team}</h3>
+                        <Badge variant="outline">{team.employeeCount} employees</Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Total Hours</p>
-                          <p className="font-medium">{dept.totalHours.toFixed(1)}</p>
+                          <p className="font-medium">{team.totalHours.toFixed(1)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Avg/Employee</p>
-                          <p className="font-medium">{dept.averageHours.toFixed(1)}</p>
+                          <p className="font-medium">{team.averageHours.toFixed(1)}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Completion</p>
@@ -583,9 +739,9 @@ const TimesheetReportsView: React.FC = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
-                            data={analytics.departmentStats.map((dept, index) => ({
-                              name: dept.department,
-                              value: dept.totalHours,
+                            data={analytics.departmentStats.map((team, index) => ({
+                              name: team.team,
+                              value: team.totalHours,
                               color: PIE_COLORS[index % PIE_COLORS.length]
                             }))}
                             cx="50%"
@@ -619,7 +775,7 @@ const TimesheetReportsView: React.FC = () => {
                         <BarChart data={analytics.departmentStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis 
-                            dataKey="department" 
+                            dataKey="team" 
                             tick={{ fontSize: 12 }}
                             angle={-45}
                             textAnchor="end"
@@ -779,7 +935,7 @@ const TimesheetReportsView: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
-                Department Statistics
+                Team Statistics
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -789,15 +945,15 @@ const TimesheetReportsView: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {analytics?.departmentStats.map((dept) => (
-                    <div key={dept.department} className="flex justify-between items-center">
+                  {analytics?.departmentStats.map((team) => (
+                    <div key={team.team} className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-900">{dept.department}</p>
-                        <p className="text-sm text-gray-600">{dept.employeeCount} employees</p>
+                        <p className="font-medium text-gray-900">{team.team}</p>
+                        <p className="text-sm text-gray-600">{team.employeeCount} employees</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">{dept.totalHours.toFixed(1)}h</p>
-                        <p className="text-sm text-gray-600">Avg: {dept.averageHours.toFixed(1)}h</p>
+                        <p className="font-semibold">{team.totalHours.toFixed(1)}h</p>
+                        <p className="text-sm text-gray-600">Avg: {team.averageHours.toFixed(1)}h</p>
                       </div>
                     </div>
                   ))}

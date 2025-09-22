@@ -136,6 +136,18 @@ namespace Server.Controllers
             public string NewPassword { get; set; } = string.Empty;
         }
 
+        public class ForgotPasswordDto
+        {
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public class ResetPasswordDto
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Token { get; set; } = string.Empty;
+            public string NewPassword { get; set; } = string.Empty;
+        }
+
         [HttpPost("change-password")]
         [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -165,6 +177,76 @@ namespace Server.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user does not exist
+                return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
+            }
+
+            if (!user.IsActive)
+            {
+                return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
+            }
+
+            // Generate password reset token
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            
+            // In a real application, you would send this token via email
+            // For demo purposes, we'll log it to console
+            Console.WriteLine($"Password reset token for {user.Email}: {resetToken}");
+            
+            // Audit password reset request
+            _context.UserAudits.Add(new UserAudit
+            {
+                UserId = user.Id,
+                EventType = "PasswordResetRequested",
+                Details = "User requested password reset",
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return BadRequest(new { message = "Invalid password reset request." });
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = "Invalid password reset request.", errors = result.Errors.Select(e => e.Description) });
+            }
+
+            // Ensure user can login after password reset
+            if (user.MustChangePassword)
+            {
+                user.MustChangePassword = false;
+                await _userManager.UpdateAsync(user);
+            }
+
+            // Audit successful password reset
+            _context.UserAudits.Add(new UserAudit
+            {
+                UserId = user.Id,
+                EventType = "PasswordReset",
+                Details = "User successfully reset password",
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Password has been reset successfully. You can now login with your new password." });
         }
     }
 }

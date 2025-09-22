@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Lock, Mail, AlertCircle } from "lucide-react"
 import { useNavigate } from 'react-router-dom';
-import authService, { type LoginData } from '../../services/auth.service';
+import authService, { type LoginData } from '../services/auth.service';
+import { Link } from 'react-router-dom';
 
 const Login = () => {
   const [formData, setFormData] = useState<LoginData>({
@@ -153,7 +154,7 @@ const Login = () => {
 
         <div className="text-center pt-4">
           <button className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            Forgot your password?
+            <Link to="/forgot-password">Forgot your password?</Link>
           </button>
         </div>
       </CardContent>

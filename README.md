@@ -252,7 +252,7 @@ AllowedOrigins=https://yourdomain.com,https://www.yourdomain.com
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Matateni Pty Ltd
 
 ## 🆘 Support & Issues
 
@@ -274,8 +274,8 @@ If you encounter any issues or have questions:
 ## 📞 Contact
 
 **Project Maintainer**: Sandile Tshabalala
-**Email**: your.email@example.com
-**Project Link**: https://github.com/yourusername/timesheet-management-system
+**Email**: sandilesaar5@gmail.com
+**Project Link**: https://github.com/SandileTshabalala/Time-sheet
 
 ---
 

@@ -178,14 +178,13 @@ namespace Server.Controllers
 
             return NoContent();
         }
-
+        // not set email yet, i will use . SendGrid in future
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null)
             {
-                // Don't reveal that the user does not exist
                 return Ok(new { message = "If an account with that email exists, password reset instructions have been sent." });
             }
 
@@ -196,8 +195,6 @@ namespace Server.Controllers
 
             // Generate password reset token
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-            
-            // In a real application, you would send this token via email
             // For demo purposes, we'll log it to console
             Console.WriteLine($"Password reset token for {user.Email}: {resetToken}");
             

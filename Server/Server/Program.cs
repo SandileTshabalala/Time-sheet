@@ -104,7 +104,7 @@ builder.Services.ConfigureApplicationCookie(options =>
         }
     };
 });
-var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173,http://localhost:8080").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173,http://localhost:5174,http://localhost:8080").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAdmin", policy =>
@@ -158,9 +158,11 @@ app.Use(async (context, next) =>
                     return;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // On any error, fall through to next middleware (safer than blocking legitimate traffic)
+                // Log the error for monitoring and operational visibility
+                var logger = context.RequestServices.GetService<ILogger<Program>>();
+                logger?.LogWarning(ex, "Error checking MustChangePassword for user {UserId}", userId);
             }
         }
     }

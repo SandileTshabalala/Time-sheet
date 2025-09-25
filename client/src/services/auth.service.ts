@@ -9,7 +9,7 @@ export interface User {
   isActive: boolean;
   mustChangePassword?: boolean;
 }
-
+ 
 export interface LoginData {
   email: string;
   password: string;
@@ -21,7 +21,7 @@ class AuthService {
     console.log("Login response:", response.data);
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('refreshToken', response.data.refreshToken); // ✅ store refresh token
+      localStorage.setItem('refreshToken', response.data.refreshToken); //store refresh token
       localStorage.setItem('user', JSON.stringify(response.data.user));  // includes mustChangePassword if provided
     }
 
@@ -33,10 +33,20 @@ class AuthService {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   }
-
+// Cleanup invalid data: If parsing fails, the invalid data is removed from localStorage
   getCurrentUser(): User | null {
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr || userStr === 'undefined' || userStr === 'null') {
+      return null;
+    }
+    try {
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Failed to parse user from localStorage:', error);
+      // Clear invalid data
+      localStorage.removeItem('user');
+      return null;
+    }
   }
 
   getToken(): string | null {
@@ -54,7 +64,6 @@ class AuthService {
 
   async changePassword(currentPassword: string, newPassword: string) {
     const res = await api.post('/auth/change-password', { currentPassword, newPassword });
-    // On success, back end clears MustChangePassword. Update local user cache accordingly.
     const user = this.getCurrentUser();
     if (user) {
       user.mustChangePassword = false;
